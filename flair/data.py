@@ -275,7 +275,7 @@ class Token(DataPoint):
             whitespace_after: bool = True,
             start_position: int = None,
     ):
-        super().__init__()
+        self.annotation_layers = {}
 
         self.text: str = text
         self.idx: int = idx
@@ -469,7 +469,8 @@ class Sentence(DataPoint):
     def __init__(
         self,
         text: str = None,
-        use_tokenizer: Union[bool, Callable[[str], List[Token]]] = False,
+        #use_tokenizer: Union[bool, Callable[[str], List[Token]]] = False,
+        use_tokenizer: bool = False,
         language_code: str = None,
     ):
         """
@@ -483,6 +484,7 @@ class Sentence(DataPoint):
         :param language_code:
         """
         super().__init__()
+        #self.annotation_layers = {}
 
         self.tokens: List[Token] = []
 
@@ -490,8 +492,9 @@ class Sentence(DataPoint):
 
         self.language_code: str = language_code
 
+        #assert(isinstance(use_tokenizer, bool))
         tokenizer = use_tokenizer
-        if type(use_tokenizer) == bool:
+        if isinstance(use_tokenizer, bool):
             tokenizer = segtok_tokenizer if use_tokenizer else space_tokenizer
 
         # if text is passed, instantiate sentence with tokens (words)
@@ -539,13 +542,19 @@ class Sentence(DataPoint):
             label_names.append(label.value)
         return label_names
 
+    def zero_lambda():
+        return 0.0
+
+    def lambda_kv(k_v):
+        return k_v[1]
+
     def get_spans(self, label_type: str, min_score=-1) -> List[Span]:
 
         spans: List[Span] = []
 
         current_span = []
 
-        tags = defaultdict(lambda: 0.0)
+        tags = defaultdict(zero_lambda)
 
         previous_tag_value: str = "O"
         for token in self:
@@ -585,12 +594,12 @@ class Sentence(DataPoint):
                     span = Span(current_span)
                     span.add_label(
                         label_type=label_type,
-                        value=sorted(tags.items(), key=lambda k_v: k_v[1], reverse=True)[0][0],
+                        value=sorted(tags.items(), key=lambda_kv, reverse=True)[0][0],
                         score=span_score)
                     spans.append(span)
 
                 current_span = []
-                tags = defaultdict(lambda: 0.0)
+                tags = defaultdict(lamba_zero)
 
             if in_span:
                 current_span.append(token)
@@ -607,7 +616,7 @@ class Sentence(DataPoint):
                 span = Span(current_span)
                 span.add_label(
                     label_type=label_type,
-                    value=sorted(tags.items(), key=lambda k_v: k_v[1], reverse=True)[0][0],
+                    value=sorted(tags.items(), key=lambda_kv, reverse=True)[0][0],
                     score=span_score)
                 spans.append(span)
 
@@ -826,24 +835,28 @@ class Sentence(DataPoint):
 
     def get_language_code(self) -> str:
         if self.language_code is None:
-            import langdetect
+            assert(False)
+            #import langdetect
+            #print(" NEED TO DETECT LANGCODE")
 
-            try:
-                self.language_code = langdetect.detect(self.to_plain_string())
-            except:
-                self.language_code = "en"
+            #try:
+            #    self.language_code = langdetect.detect(self.to_plain_string())
+            #except:
+            #    self.language_code = "en"
 
         return self.language_code
 
     @staticmethod
-    def _restore_windows_1252_characters(text: str) -> str:
-        def to_windows_1252(match):
-            try:
-                return bytes([ord(match.group(0))]).decode("windows-1252")
-            except UnicodeDecodeError:
-                # No character at the corresponding code point: remove it
-                return ""
+    def to_windows_1252(match):
+        #try:
+        return bytes([ord(match.group(0))]).decode("windows-1252")
+        #except UnicodeDecodeError:
+        #    assert(False)
+        #    # No character at the corresponding code point: remove it
+        #    return ""
 
+    @staticmethod
+    def _restore_windows_1252_characters(text: str) -> str:
         return re.sub(r"[\u0080-\u0099]", to_windows_1252, text)
 
 
@@ -1357,14 +1370,14 @@ def segtok_tokenizer(text: str) -> List[Token]:
     previous_word_offset = -1
     previous_token = None
     for word in words:
-        try:
-            word_offset = index(word, current_offset)
-            start_position = word_offset
-        except:
-            word_offset = previous_word_offset + 1
-            start_position = (
-                current_offset + 1 if current_offset > 0 else current_offset
-            )
+        #try:
+        word_offset = index(word, current_offset)
+        start_position = word_offset
+        #except:
+        #    word_offset = previous_word_offset + 1
+        #    start_position = (
+        #        current_offset + 1 if current_offset > 0 else current_offset
+        #    )
 
         if word:
             token = Token(

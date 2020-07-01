@@ -11,6 +11,17 @@ import torch
 from torch.optim.sgd import SGD
 from torch.utils.data.dataset import ConcatDataset
 
+import random
+import torch
+import numpy as np
+# Make all randomness deterministic
+random.seed(1337)
+torch.manual_seed(1337)
+np.random.seed(1337)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
+
 try:
     from apex import amp
 except ImportError:
@@ -31,7 +42,6 @@ from flair.training_utils import (
     AnnealOnPlateau,
 )
 from flair.models import SequenceTagger
-import random
 
 log = logging.getLogger("flair")
 
@@ -573,16 +583,26 @@ class ModelTrainer:
 
         # test best model if test data is present
         #if self.corpus.test:
-        if False:
+        if True:
             final_score = self.final_test(base_path, mini_batch_chunk_size, num_workers)
         else:
             final_score = 0
+            from flair.data import Sentence
+            sentence: Sentence = Sentence("George Washington went to Washington .")
+            self.model.predict(sentence)
+
+            print("Analysing %s" % sentence)
+            print("\nThe following NER tags are found: \n")
+            print(sentence)
+            print(sentence.to_tagged_string())
             log.info("Test data not provided setting final score to 0")
 
         log.removeHandler(log_handler)
 
         if self.use_tensorboard:
             writer.close()
+
+
 
         return {
             "test_score": final_score,
@@ -614,8 +634,9 @@ class ModelTrainer:
 
         self.model.eval()
 
-        if (base_path / "best-model.pt").exists():
-            self.model = self.model.load(base_path / "best-model.pt")
+        torch.jit.script(self.model)
+        #if (base_path / "best-model.pt").exists():
+        #    self.model = self.model.load(base_path / "best-model.pt")
 
         test_results, test_loss = self.model.evaluate(
             self.corpus.test,
@@ -645,6 +666,7 @@ class ModelTrainer:
         # get and return the final test score of best model
         final_score = test_results.main_score
 
+        print("FINAL RESULT", test_loss, final_score)
         return final_score
 
     def find_learning_rate(

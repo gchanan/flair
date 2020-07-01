@@ -601,6 +601,7 @@ class SequenceTagger(flair.nn.Model):
 
     def forward(self, sentences: List[Sentence]):
 
+        #print("sentences! ", sentences)
         self.embeddings.embed(sentences)
 
         names = self.embeddings.get_names()
@@ -616,9 +617,19 @@ class SequenceTagger(flair.nn.Model):
 
         all_embs = list()
         for sentence in sentences:
-            all_embs += [
-                emb for token in sentence for emb in token.get_each_embedding(names)
-            ]
+            sentence_embs = list()
+            for token in sentence:
+                sentence_embs += [emb for emb in token.get_each_embedding(names)]
+            all_embs += sentence_embs
+                #for emb in token.get_each_embedding(names):
+                #    sentence_embs += emb
+
+
+            #all_embs_sentence = [sentence for emb in token.get_each_embedding(names)]
+            #all_embs += [emb for token in all_embs_sentence]
+            #all_embs += [
+            #    emb for token in sentence for emb in token.get_each_embedding(names)
+            #]
             nb_padding_tokens = longest_token_sequence_in_batch - len(sentence)
 
             if nb_padding_tokens > 0:
