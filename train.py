@@ -57,7 +57,7 @@ trainer.train(
     "resources/taggers/example-ner",
     learning_rate=0.1,
     mini_batch_size=32,
-    max_epochs=20,
+    max_epochs=1,
     shuffle=False,
 )
 
