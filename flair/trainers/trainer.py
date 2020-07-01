@@ -190,7 +190,7 @@ class ModelTrainer:
             if (not param_selection_mode and self.corpus.test and monitor_test)
             else False
         )
-        log_dev = True if not train_with_dev else False
+        log_dev = False
         log_train_part = (
             True
             if (eval_on_train_fraction == "dev" or eval_on_train_fraction > 0.0)
@@ -472,7 +472,8 @@ class ModelTrainer:
                         )
 
                 # determine learning rate annealing through scheduler. Use auxiliary metric for AnnealOnPlateau
-                if not train_with_dev and isinstance(lr_scheduler, AnnealOnPlateau):
+                #if not train_with_dev and isinstance(lr_scheduler, AnnealOnPlateau):
+                if False:
                     lr_scheduler.step(current_score, dev_loss)
                 else:
                     lr_scheduler.step(current_score)
@@ -571,7 +572,8 @@ class ModelTrainer:
                 log.info("Done.")
 
         # test best model if test data is present
-        if self.corpus.test:
+        #if self.corpus.test:
+        if False:
             final_score = self.final_test(base_path, mini_batch_chunk_size, num_workers)
         else:
             final_score = 0

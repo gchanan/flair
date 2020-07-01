@@ -13,7 +13,7 @@ from flair.training_utils import EvaluationMetric
 from flair.visual.training_curves import Plotter
 
 # 1. get the corpus
-corpus: Corpus = flair.datasets.UD_ENGLISH()
+corpus: Corpus = flair.datasets.UD_ENGLISH(base_path="datasets")
 print(corpus)
 
 # 2. what tag do we want to predict?
